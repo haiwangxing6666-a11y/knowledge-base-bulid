@@ -50,3 +50,5 @@ app:
     overlap-chars: 50
   web:
     max-content-bytes: 2097152
+  file:
+    upload-dir: ./uploads
