@@ -48,3 +48,5 @@ app:
   chunk:
     max-chars: 500
     overlap-chars: 50
+  web:
+    max-content-bytes: 2097152
