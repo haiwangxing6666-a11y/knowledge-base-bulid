@@ -20,7 +20,25 @@ spring:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
+  ai:
+    vectorstore:
+      pgvector:
+        table-name: vector_store
+        schema-name: public
+        dimensions: 1024
+        distance-type: COSINE_DISTANCE
+        index-type: HNSW
+        initialize-schema: true
 
+    openai:
+      api-key: ${SILICONFLOW_API_KEY}
+      base-url: https://api.siliconflow.cn/v1
+
+      embedding:
+        model: BAAI/bge-m3
+
+      chat:
+        model: Qwen/Qwen3-8B
 
 server:
   port: 8082
