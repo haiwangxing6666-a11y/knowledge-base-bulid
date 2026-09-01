@@ -44,11 +44,7 @@ public class DocumentService {
      * 查询所有资料，按照上传时间倒序排列。
      */
     public List<DocumentEntity> list() {
-        return documentRepository.findAll(
-                Sort.by(
-                        Sort.Direction.DESC,
-                        "uploadTime"
-                )
+        return documentRepository.findAll(Sort.by(Sort.Direction.DESC, "uploadTime")
         );
     }
 
@@ -66,16 +62,11 @@ public class DocumentService {
         String text;
 
         try {
-            text = parserService.parse(
-                    file,
-                    fileType
-            );
+
+            text = parserService.parse(file, fileType);
+
         } catch (Exception exception) {
-            throw new IllegalArgumentException(
-                    "无法解析文件："
-                            + safeMessage(exception),
-                    exception
-            );
+            throw new IllegalArgumentException("无法解析文件：" + safeMessage(exception), exception);
         }
 
         return ingestNew(originalName, fileType, null, text
@@ -85,46 +76,30 @@ public class DocumentService {
     /**
      * 新建并入库纯文本笔记。
      */
-    public DocumentEntity ingestNote(
-            String title,
-            String content
-    ) {
-        return ingestNew(title.trim(), "note", null, content
-        );
+    public DocumentEntity ingestNote(String title, String content) {
+        return ingestNew(title.trim(), "note", null, content);
     }
 
     /**
      * 抓取并入库公开网页。
      */
-    public DocumentEntity ingestLink(
-            String url,
-            String preferredTitle
-    ) {
-        WebContentService.WebPage page =
-                webContentService.fetch(url);
+    public DocumentEntity ingestLink(String url, String preferredTitle) {
+        WebContentService.WebPage page = webContentService.fetch(url);
 
         String title = preferredTitle == null || preferredTitle.isBlank() ? page.title() : preferredTitle.trim();
 
-        String safeTitle = title.substring(
-                0,
-                Math.min(title.length(), 200)
-        );
+        String safeTitle = title.substring(0, Math.min(title.length(), 200));
 
-        return ingestNew(safeTitle, "url", page.url(), page.text()
-        );
+        return ingestNew(safeTitle, "url", page.url(), page.text());
     }
 
     /**
      * 使用新文件替换已有资料的内容。
      */
-    public DocumentEntity reingest(
-            Long id,
-            MultipartFile file
-    ) {
+    public DocumentEntity reingest(Long id, MultipartFile file) {
         validateFile(file);
 
-        DocumentEntity entity =
-                requireDocument(id);
+        DocumentEntity entity = requireDocument(id);
 
         String originalName = resolveName(file);
         String fileType = extractType(originalName);
@@ -134,25 +109,15 @@ public class DocumentService {
         String text;
 
         try {
-            text = parserService.parse(
-                    file,
-                    fileType
-            );
+            text = parserService.parse(file, fileType);
         } catch (Exception exception) {
-            throw new IllegalArgumentException(
-                    "无法解析文件："
-                            + safeMessage(exception),
-                    exception
-            );
+            throw new IllegalArgumentException("无法解析文件：" + safeMessage(exception), exception);
         }
 
         String newHash = hash(text);
 
         if (
-                "READY".equals(entity.getStatus())
-                        && newHash.equals(
-                        entity.getContentHash()
-                )
+                "READY".equals(entity.getStatus()) && newHash.equals(entity.getContentHash())
         ) {
             return entity;
         }
@@ -162,11 +127,7 @@ public class DocumentService {
         entity.setFileType(fileType);
         entity.setSourceUrl(null);
 
-        return replaceContent(
-                entity,
-                text,
-                newHash
-        );
+        return replaceContent(entity, text, newHash);
     }
 
     /**
@@ -187,9 +148,7 @@ public class DocumentService {
      */
     private DocumentEntity ingestNew(String name, String type, String sourceUrl, String text) {
         if (text == null || text.isBlank()) {
-            throw new IllegalArgumentException(
-                    "资料内容不能为空"
-            );
+            throw new IllegalArgumentException("资料内容不能为空");
         }
 
         DocumentEntity entity = new DocumentEntity();
@@ -235,18 +194,12 @@ public class DocumentService {
             List<String> chunks = chunkingService.chunk(text);
 
             if (chunks.isEmpty()) {
-                throw new IllegalArgumentException(
-                        "资料解析后没有可入库的内容"
-                );
+                throw new IllegalArgumentException("资料解析后没有可入库的内容");
             }
 
             List<Document> documents = new ArrayList<>(chunks.size());
 
-            for (
-                    int index = 0;
-                    index < chunks.size();
-                    index++
-            ) {
+            for (int index = 0; index < chunks.size(); index++) {
                 Map<String, Object> metadata =
                         Map.of(
                                 "documentId", String.valueOf(entity.getId()),
@@ -286,11 +239,7 @@ public class DocumentService {
                     exception
             );
 
-            throw new RuntimeException(
-                    "资料入库失败："
-                            + entity.getName(),
-                    exception
-            );
+            throw new RuntimeException("资料入库失败：" + entity.getName(), exception);
         }
     }
 
@@ -351,25 +300,16 @@ public class DocumentService {
     /**
      * 取得安全的文件名。
      */
-    private String resolveName(
-            MultipartFile file
-    ) {
-        String originalName =
-                file.getOriginalFilename();
+    private String resolveName(MultipartFile file) {
+        String originalName = file.getOriginalFilename();
 
-        if (
-                originalName == null
-                        || originalName.isBlank()
-        ) {
+        if (originalName == null || originalName.isBlank()) {
             return "未命名文件.txt";
         }
 
-        String normalized =
-                originalName.replace('\\', '/');
+        String normalized = originalName.replace('\\', '/');
 
-        return normalized.substring(
-                normalized.lastIndexOf('/') + 1
-        );
+        return normalized.substring(normalized.lastIndexOf('/') + 1);
     }
 
     /**
@@ -380,9 +320,7 @@ public class DocumentService {
             return "";
         }
 
-        return filename.substring(
-                filename.lastIndexOf('.') + 1
-        ).toLowerCase();
+        return filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
     }
 
     /**
@@ -390,25 +328,16 @@ public class DocumentService {
      */
     private String hash(String text) {
         try {
-            MessageDigest messageDigest =
-                    MessageDigest.getInstance(
-                            "SHA-256"
-                    );
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
 
             byte[] bytes = messageDigest.digest(
-                    text.getBytes(
-                            StandardCharsets.UTF_8
-                    )
+                    text.getBytes(StandardCharsets.UTF_8)
             );
 
-            return HexFormat.of()
-                    .formatHex(bytes);
+            return HexFormat.of().formatHex(bytes);
 
         } catch (Exception exception) {
-            throw new IllegalStateException(
-                    "无法计算内容摘要",
-                    exception
-            );
+            throw new IllegalStateException("无法计算内容摘要", exception);
         }
     }
 
@@ -417,8 +346,7 @@ public class DocumentService {
      */
     private String safeMessage(Exception exception) {
         return exception.getMessage() == null
-                ? exception.getClass()
-                  .getSimpleName()
+                ? exception.getClass().getSimpleName()
                 : exception.getMessage();
     }
 }
