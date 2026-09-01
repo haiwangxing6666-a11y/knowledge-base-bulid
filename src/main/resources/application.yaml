@@ -52,3 +52,8 @@ app:
     max-content-bytes: 2097152
   file:
     upload-dir: ./uploads
+  rag:
+    top-k: 5
+    min-similarity: 0.55
+    retry-min-hits: 2
+    max-context-chars: 7000
